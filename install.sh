@@ -19,7 +19,7 @@ cd /opt/
 git clone git@github.com:huwcbjones/COMP3210.git
 
 echo "Setting permissions"
-chown -r comp3210:comp3210 COMP3210
+chown -R comp3210:comp3210 COMP3210
 cd COMP3210
 
 echo "Installing backend API"
