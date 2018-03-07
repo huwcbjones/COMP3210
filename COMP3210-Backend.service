@@ -1,0 +1,13 @@
+[Unit]
+Description=COMP3210 Backend API
+After=network.target
+
+[Service]
+Type=notify
+User=comp3210
+WorkingDirectory=/opt/COMP3210/Backend-API
+ExecStart=/opt/COMP3210/Backend-API/run.sh
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
