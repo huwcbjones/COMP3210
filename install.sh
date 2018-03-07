@@ -5,7 +5,7 @@ if [ "$EUID" -ne 0 ]
   exit
 fi
 
-useradd -r -g comp3210 comp3210
+useradd -r -U comp3210
 
 cd /opt/
 git clone git@github.com:huwcbjones/COMP3210.git
