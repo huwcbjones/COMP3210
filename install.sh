@@ -24,8 +24,8 @@ cd COMP3210
 
 echo "Installing backend API"
 cd /opt/COMP3210/Backend-API
-./install.sh
+. ./install.sh
 
 echo "Installing frontend"
 cd /opt/COMP3210/Frontend
-./install.sh
+. ./install.sh
