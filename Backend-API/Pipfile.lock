@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "fd95a81795dc8285d4feafb7107c399ad22603a64c0fa08a7585b4e54a67cac9"
+            "sha256": "80813dec4ee64f2936a0eaf00bf5821f1b37f2a764540e7aff6a8a8bb350178f"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -27,6 +27,12 @@
         ]
     },
     "default": {
+        "sdnotify": {
+            "hashes": [
+                "sha256:73977fc746b36cc41184dd43c3fe81323e7b8b06c2bb0826c4f59a20c56bb9f1"
+            ],
+            "version": "==0.3.2"
+        },
         "tornado": {
             "hashes": [
                 "sha256:54a568429fb77529622a4607c66f9144aa980bd4fe2326206672707eba6951fc",

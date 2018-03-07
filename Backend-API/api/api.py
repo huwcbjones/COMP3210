@@ -8,6 +8,8 @@ from json import JSONDecodeError
 from threading import Thread
 
 import struct
+
+import sdnotify
 import tornado.web
 
 from api import controllers
@@ -17,6 +19,7 @@ class API:
     app = None
 
     def __init__(self, enable_binary, binary_port, binary_address, enable_rest, rest_port, rest_address):
+        self.systemd = sdnotify.SystemdNotifier()
         if API.app is None:
             API.app = self
         else:
@@ -120,7 +123,10 @@ class API:
             self._binary_api_thread.start()
 
         loop = asyncio.get_event_loop()
+
         try:
+            self.systemd.notify("READY=1")
+            self.systemd.notify("STATUS=Running")
             loop.run_forever()
         except:
             # Find all running tasks:
