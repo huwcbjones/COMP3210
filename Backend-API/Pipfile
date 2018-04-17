@@ -9,6 +9,9 @@ name = "pypi"
 
 tornado = "*"
 sdnotify = "*"
+pyserial = "*"
+xbee = "*"
+"a3c0599" = {path = "rf-bridge-python", editable = true}
 
 
 [dev-packages]

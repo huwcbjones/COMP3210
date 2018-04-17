@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "80813dec4ee64f2936a0eaf00bf5821f1b37f2a764540e7aff6a8a8bb350178f"
+            "sha256": "6c0e8f5a6f9569fb62d362b1194b311ad8f837ffa6d032d048b40da739f5bbd8"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -27,6 +27,17 @@
         ]
     },
     "default": {
+        "a3c0599": {
+            "editable": true,
+            "path": "rf-bridge-python"
+        },
+        "pyserial": {
+            "hashes": [
+                "sha256:e0770fadba80c31013896c7e6ef703f72e7834965954a78e71a3049488d4d7d8",
+                "sha256:6e2d401fdee0eab996cf734e67773a0143b932772ca8b42451440cfed942c627"
+            ],
+            "version": "==3.4"
+        },
         "sdnotify": {
             "hashes": [
                 "sha256:73977fc746b36cc41184dd43c3fe81323e7b8b06c2bb0826c4f59a20c56bb9f1"
@@ -35,13 +46,20 @@
         },
         "tornado": {
             "hashes": [
-                "sha256:54a568429fb77529622a4607c66f9144aa980bd4fe2326206672707eba6951fc",
-                "sha256:f112ae0b50d2080995afab36aca4fcd93af1fa2e7185b15d854b0d6b2578dce4",
-                "sha256:6b56415667b1ad4f222486baa7118d5445310fd9b99a2263e029bc63df6e2e80",
-                "sha256:4b6a623a28307c5d5d64b34ed7c84f2bfcc6848fd71546bb8bc03dd82b71ad04",
-                "sha256:62f754562c61ea94b00d61727202105068bc2760f076cc34d2da1a57041731aa"
+                "sha256:88ce0282cce70df9045e515f578c78f1ebc35dcabe1d70f800c3583ebda7f5f5",
+                "sha256:ba9fbb249ac5390bff8a1d6aa4b844fd400701069bda7d2e380dfe2217895101",
+                "sha256:408d129e9d13d3c55aa73f8084aa97d5f90ed84132e38d6932e63a67d5bec563",
+                "sha256:c050089173c2e9272244bccfb6a8615fb9e53b79420a5551acfa76094ecc3111",
+                "sha256:1b83d5c10550f2653380b4c77331d6f8850f287c4f67d7ce1e1c639d9222fbc7"
             ],
-            "version": "==5.0"
+            "version": "==5.0.2"
+        },
+        "xbee": {
+            "hashes": [
+                "sha256:f4a9f7d5da7c0fbc19b4e52f8b975859c277ef72606d18d1b6f468049e14d0ae",
+                "sha256:77c06de63403409a7e6ca2305b05f499fbff52a0d6031366ffb7acebe14db657"
+            ],
+            "version": "==2.3.2"
         }
     },
     "develop": {}
