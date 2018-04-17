@@ -1,3 +1,3 @@
-[submodule "Backend-API/lib/rf-bridge-python"]
+[submodule "Backend-API/rf-bridge-python"]
 	path = Backend-API/rf-bridge-python
 	url = git@github.com:Jamie-/rf-bridge-python
