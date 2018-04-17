@@ -44,10 +44,12 @@ class Controller(tornado.web.RequestHandler):
             self.write({"message": http.client.responses[status_code]})
 
     def write(self, chunk, set_content_type=True, status_code=None):
-        if isinstance(chunk, (dict, list)):
-            chunk = json.dumps(chunk)
         if status_code is not None:
             self.set_status(status_code)
+        if chunk is None:
+            return
+        if isinstance(chunk, (dict, list)):
+            chunk = json.dumps(chunk)
         if set_content_type:
             self.set_header('Content-Type', 'application/json')
         super().write(chunk)
