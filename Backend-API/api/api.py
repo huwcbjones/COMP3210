@@ -3,6 +3,7 @@ import logging
 import socket
 import asyncio
 import inspect
+import os.path
 from enum import Enum
 from json import JSONDecodeError
 from threading import Thread
@@ -11,6 +12,7 @@ import struct
 
 import sdnotify
 import tornado.web
+from sensor_net import SensorNetwork, Node
 
 from api import controllers
 
@@ -18,8 +20,9 @@ from api import controllers
 class API:
     app = None
 
-    def __init__(self, enable_binary, binary_port, binary_address, enable_rest, rest_port, rest_address):
+    def __init__(self, enable_binary, binary_port, binary_address, enable_rest, rest_port, rest_address, serial):
         self.systemd = sdnotify.SystemdNotifier()
+
         if API.app is None:
             API.app = self
         else:
@@ -48,7 +51,20 @@ class API:
                 logging.fatal("Error binding to {}:{}".format(rest_address, rest_port))
                 logging.fatal(e.strerror)
                 quit(1)
-        pass
+
+        self._init_rf_network(serial)
+
+    def _init_rf_network(self, serial):
+        logging.info("Initialising RF network...")
+        if serial is None or not os.path.exists(serial):
+            logging.fatal("Cannot open serial device {}".format(serial))
+            quit(1)
+
+        logging.info("Starting sensor network...")
+        self.sensor_net = SensorNetwork(serial)
+        self.sensor_net.discover(2)
+
+        logging.info("Started RF Network!")
 
     def _init_binary(self, address, port):
         self._binary_api_thread = Thread(
@@ -135,14 +151,16 @@ class API:
             # Run loop until tasks done:
             loop.run_until_complete(asyncio.gather(*pending))
         finally:
+            self.sensor_net.stop()
             loop.stop()
             loop.close()
 
     @staticmethod
     def _check_ports(address, port):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind((address, port))
-        s.close()
+        if not __debug__:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.bind((address, port))
+            s.close()
 
 
 class BinaryProtocol(asyncio.Protocol):
