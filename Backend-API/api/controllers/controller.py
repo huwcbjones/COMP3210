@@ -28,7 +28,10 @@ class Controller(tornado.web.RequestHandler):
         self.json_args = {}
         if "Content-Type" in headers and headers["Content-Type"].startswith("application/json"):
             try:
-                self.json_args = json.loads(self.request.body)
+                body = self.request.body
+                if isinstance(body, bytes):
+                    body = body.decode()
+                self.json_args = json.loads(body)
             except JSONDecodeError as e:
                 logging.warning(e.msg)
                 raise tornado.web.HTTPError(400, reason="Could not parse JSON data.")
