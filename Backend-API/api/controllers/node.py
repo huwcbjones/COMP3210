@@ -81,3 +81,33 @@ class NodeSendDataController(Controller):
                 raise HTTPError(400, reason=e.args[0])
 
         self.set_status(200)
+
+
+class NodeGetDataController(Controller):
+
+        route = [r"/node/([0-9]+)/([0-9]+)(/[0-9]+|)"]
+
+        async def get(self, node_id, payload, index):
+            try:
+                node_id = int(node_id)
+            except ValueError:
+                raise HTTPError(status_code=404, reason="Node not found.")
+
+            if node_id not in self.app.sensor_net._slave_nodes:
+                raise HTTPError(status_code=404, reason="Node not found.")
+
+            node = self.app.sensor_net._slave_nodes[node_id]
+
+            payload = Node.Payload(int(payload))
+            if index != "":
+                index = int(index[1:])
+            else:
+                index = 0
+
+            try:
+                data = self.app.sensor_net.get_data(node, payload, index)
+                self.write({"value": data})
+            except ValueError or TypeError as e:
+                raise HTTPError(status_code=400, reason=e.args[0])
+            except ProtocolError as e:
+                raise HTTPError(400, reason=e.args[0])
