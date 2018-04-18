@@ -4,6 +4,9 @@ import socket
 import asyncio
 import inspect
 import os.path
+import os
+import pwd
+import grp
 from enum import Enum
 from json import JSONDecodeError
 from threading import Thread
@@ -20,8 +23,20 @@ from api import controllers
 class API:
     app = None
 
-    def __init__(self, enable_binary, binary_port, binary_address, enable_rest, rest_port, rest_address, serial):
+    def __init__(self, enable_binary, binary_port, binary_address, enable_rest, rest_port, rest_address, serial, user, group):
         self.systemd = sdnotify.SystemdNotifier()
+
+        try:
+            self.user = pwd.getpwnam(user).pw_uid
+        except KeyError:
+            logging.fatal("User {} not found!".format(user))
+            quit(1)
+
+        try:
+            self.group = grp.getgrnam(group).gr_gid
+        except KeyError:
+            logging.fatal("Group {} not found!".format(group))
+            quit(1)
 
         if API.app is None:
             API.app = self
@@ -140,6 +155,8 @@ class API:
 
         loop = asyncio.get_event_loop()
 
+        logging.info("Startup complete...")
+        self._drop_privs()
         try:
             self.systemd.notify("READY=1")
             self.systemd.notify("STATUS=Running")
@@ -154,6 +171,15 @@ class API:
             self.sensor_net.stop()
             loop.stop()
             loop.close()
+
+    def _drop_privs(self):
+        if os.getuid() != 0:
+            return
+        logging.info("Dropping privileges...")
+
+        os.setgroups([])
+        os.setgid(self.group)
+        os.setuid(self.user)
 
     @staticmethod
     def _check_ports(address, port):

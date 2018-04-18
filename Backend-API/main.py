@@ -30,6 +30,9 @@ bool_group.add_argument("+r", dest="enable_rest", help="Enable REST API", action
 # Other
 parser.add_argument("-v", "--verbose", dest="verbosity", action="count", help="Increase verbosity.")
 parser.add_argument("-x", dest="xbee", help="X-Bee Serial Device", required=True)
+
+parser.add_argument("-u", "--user", dest="user", help="User to run service as", default="comp3210")
+parser.add_argument("-g", "--group", dest="group", help="User to run service as", default="comp3210")
 args = parser.parse_args()
 
 # Set root logging level
@@ -44,6 +47,6 @@ if args.verbosity is not None:
 api = API(
     enable_binary=args.enable_binary, binary_address=args.bin_addr, binary_port=args.bin_port,
     enable_rest=args.enable_rest, rest_address=args.rest_addr, rest_port=args.rest_port,
-    serial=args.xbee
+    serial=args.xbee, user=args.user, group=args.group
 )
 api.run()
