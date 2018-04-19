@@ -4,7 +4,6 @@ from tornado.web import HTTPError
 
 
 class NodeIOController(Controller):
-
     route = [r"/node/([0-9]+)/io"]
 
     async def get(self, node_id):
@@ -36,7 +35,6 @@ class NodeIOController(Controller):
 
 
 class NodeSendDataController(Controller):
-
     route = [r"/node/([0-9]+)"]
 
     async def post(self, node_id):
@@ -76,7 +74,7 @@ class NodeSendDataController(Controller):
             try:
                 self.app.sensor_net.send_data(node, payload, d["data"], d["index"])
             except ValueError or TypeError as e:
-                raise HTTPError(status_code=400, reason=e)
+                raise HTTPError(status_code=400, reason=e.args[0])
             except ProtocolError as e:
                 raise HTTPError(400, reason=e.args[0])
 
@@ -84,30 +82,34 @@ class NodeSendDataController(Controller):
 
 
 class NodeGetDataController(Controller):
+    route = [r"/node/([0-9]+)/([0-9]+|)(/[0-9]+|)"]
 
-        route = [r"/node/([0-9]+)/([0-9]+)(/[0-9]+|)"]
+    async def get(self, node_id, payload, index):
+        try:
+            node_id = int(node_id)
+        except ValueError:
+            raise HTTPError(status_code=404, reason="Node not found.")
 
-        async def get(self, node_id, payload, index):
+        if node_id not in self.app.sensor_net._slave_nodes:
+            raise HTTPError(status_code=404, reason="Node not found.")
+
+        node = self.app.sensor_net._slave_nodes[node_id]
+
+        payload = Node.Payload(int(payload))
+        if index != "":
             try:
-                node_id = int(node_id)
-            except ValueError:
-                raise HTTPError(status_code=404, reason="Node not found.")
-
-            if node_id not in self.app.sensor_net._slave_nodes:
-                raise HTTPError(status_code=404, reason="Node not found.")
-
-            node = self.app.sensor_net._slave_nodes[node_id]
-
-            payload = Node.Payload(int(payload))
-            if index != "":
                 index = int(index[1:])
-            else:
-                index = 0
-
-            try:
-                data = self.app.sensor_net.get_data(node, payload, index)
-                self.write({"value": data})
+                data = {"value": self.app.sensor_net.get_data(node, payload, index)}
             except ValueError or TypeError as e:
                 raise HTTPError(status_code=400, reason=e.args[0])
             except ProtocolError as e:
                 raise HTTPError(400, reason=e.args[0])
+        else:
+            data = []
+            for i in range(0, 16):
+                try:
+                    result = self.app.sensor_net.get_data(node, payload, i)
+                    data.append({"index": i, "value": result})
+                except ProtocolError:
+                    break
+        self.write(data)
