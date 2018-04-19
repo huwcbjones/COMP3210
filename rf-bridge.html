@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta charset="UTF-8">
+    <title>RF Bridge</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/open-iconic/1.1.1/font/css/open-iconic-bootstrap.css"
+          integrity="sha256-CNwnGWPO03a1kOlAsGaH5g8P3dFaqFqqGFV/1nkX5OU=" crossorigin="anonymous"/>
+</head>
+<body>
+<div class="progress" style="height: 3px; background-color: #fff">
+    <div class="progress-bar" role="progressbar" id="progress"></div>
+</div>
+<div class="container-fluid" style="margin-top: -3px">
+    <div class="row">
+        <div class="col-sm-4">
+            <h1 class="display-3">RF Bridge</h1>
+        </div>
+        <div class="col-sm-8" id="alerts" style="padding-top: 20px">
+
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-4">
+            <ul class="list-group" id="node-list">
+                <li class="list-group-item"><h2>Nodes</h2></li>
+            </ul>
+            <br/>
+            <button type="button" class="btn btn-block btn-light" onclick="loadNodes(true)">
+                Refresh&nbsp;&nbsp;&nbsp;<span
+                    class="small oi oi-reload"></span></button>
+        </div>
+        <div class="col-sm-8">
+            <div class="row" id="jumbotron">
+                <div class="col-sm">
+                    <div class="jumbotron">
+                        <h1 class="display-4">Node Information</h1>
+                        <hr/>
+                        <p class="lead">Select a node from the left to view the output and control the inputs.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm">
+                    <h1><span id="node_name"></span></h1>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm" id="cards">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"
+        integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+<script type="text/javascript">
+    var progress = $("#progress");
+    $(document).ready(function () {
+        loadNodes();
+    });
+
+    var performingRequest = false;
+    var activeNode = null;
+
+    function loadNodes(forceReload) {
+        if (performingRequest) {
+            return;
+        }
+        var refreshIcon = $("#refreshIcon");
+        refreshIcon.addClass("rotate");
+        if (forceReload === undefined) {
+            forceReload = false;
+        }
+        var nodeList = $("#node-list");
+
+        var uri = forceReload ? "rediscover" : "discover";
+        makeRequest(uri, function (data) {
+            $(".node").remove();
+            data.forEach(function (value) {
+                var node = createNodeLink(value["id"], value["name"]);
+                if (activeNode === value["id"]){
+                    node.addClass("active");
+                }
+                nodeList.append(node);
+            });
+            $(".node").click(function () {
+                var node = $(this);
+                activeNode = parseInt(node.attr("data-node-id"));
+                if (!node.hasClass("active")) {
+                    displayNodeData(node, node.attr("data-node-id"));
+                }
+            });
+        });
+    }
+
+    function makeRequest(url, callback, type, data) {
+        if (type === undefined) {
+            type = 'GET';
+        }
+        if (data === undefined) {
+            data = {};
+        }
+        var contentType = "application/x-www-form-urlencoded";
+        if (type === "POST") {
+            data = JSON.stringify(data);
+            contentType = "application/json";
+        }
+        $.ajax({
+            type: type,
+            'url': '/' + url,
+            data: data,
+            contentType: contentType,
+            beforeSend: function () {
+                progress.show();
+                progress.width("33%");
+            },
+            complete: function () {
+                performingRequest = false;
+                progress.width("100%");
+                setTimeout(function () {
+                    if (!performingRequest) {
+                        progress.fadeOut(400, function () {
+                            progress.width("0%")
+                        });
+                    }
+                }, 500);
+            },
+            success: function (data) {
+                progress.width("66%");
+                callback(data);
+            },
+            error: function (data) {
+                displayAlert("danger", "<strong>Error " + data["status"] + ": </strong>" + data["statusText"]);
+            }
+        });
+    }
+
+    function displayAlert(type, content) {
+        var alerts = $("#alerts");
+        if (alerts.children().length !== 0) {
+            alerts.children().each(function () {
+                $(this).remove();
+            })
+        }
+        var alert = $("<div></div>")
+            .addClass("alert alert-" + type)
+            .append(content)
+            .hide();
+        alerts.append(alert);
+        alert.fadeIn(200);
+        setTimeout(function () {
+            alert.fadeOut(500, function () {
+                $(this).remove();
+            });
+        }, 7500)
+    }
+
+    function createNodeLink(node_id, identifier) {
+        return $("<a></a>")
+            .addClass("list-group-item list-group-item-action node")
+            .attr("data-node-id", node_id)
+            .attr("href", "#")
+            .html("<h3>" + identifier + '\n<span class="small text-muted">' + node_id + '</span></h3>');
+    }
+
+    function displayNodeData(node, node_id) {
+        $("#jumbotron").fadeOut();
+        makeRequest("node/" + node_id + "/io", function (data) {
+            node.addClass("active");
+            $("#node_name").text(data["identifier"]);
+            var cards = $("#cards");
+            cards.empty();
+            data["types"].forEach(function (type) {
+                cards.append(createIOCard(node_id, type));
+                cards.append("<br />");
+            });
+        });
+    }
+
+    function createIOCard(node_id, type) {
+        switch (type["type"]) {
+            case 2:
+            case 4:
+                return createInputCard(node_id, type);
+            case 0:
+            case 1:
+            case 3:
+            case 5:
+                return createOutputCard(node_id, type);
+        }
+
+    }
+
+    function createInputCard(node_id, type) {
+        var title = "";
+        if (type["type"] === 2) {
+            title = "Digital";
+        } else if (type["type"] === 4) {
+            title = "Byte";
+        }
+        var card = createCard(type["params"].length + " x " + title + " Input");
+        var form = $("<form></form>")
+            .attr("data-node", node_id)
+            .attr("data-type", type["type"]);
+
+        type["params"].forEach(function (value) {
+            var input = $("<input />")
+                .attr("type", "number")
+                .attr("data-index", value["id"])
+                .attr("placeholder", value["type"])
+                .addClass("form-control");
+
+            if (type["type"] === 4) {
+                input.attr("min", 0)
+                    .attr("max", 255);
+            }
+            var row = $("<div></div>")
+                .addClass("form-group row")
+                .append($("<label></label>")
+                    .addClass("col-form-label col-sm-4")
+                    .text(value["type"]))
+                .append($("<div></div>")
+                    .addClass("col-sm-8").append(input)
+                );
+            form.append(row);
+        });
+        form.append(
+            $("<div></div>")
+                .addClass("col-6 offset-3")
+                .append(
+                    $("<button></button>")
+                        .attr("type", "button")
+                        .addClass("btn btn-primary btn-block")
+                        .append('Send Values&nbsp;&nbsp;&nbsp;<span class="small oi oi-share"></span>')
+                        .click(function () {
+                            var form = $($(this).parents("form")[0]);
+                            var data = [];
+                            form.find("input").each(function (_, e) {
+                                var el = $(e);
+                                var index = parseInt(el.attr("data-index"));
+                                var val = el.val();
+                                if (val == 0) {
+                                    val = 0;
+                                } else {
+                                    val = parseInt(val);
+                                }
+                                data.push({
+                                    "index": index,
+                                    "data": val
+                                })
+                            });
+                            makeRequest("" +
+                                "node/" + form.attr("data-node"),
+                                function (data) {
+                                    displayAlert("success", "Successfully sent data to node!");
+                                },
+                                "POST",
+                                {
+                                    "payload": form.attr("data-type"),
+                                    "data": data
+                                }
+                            );
+                        })
+                )
+        );
+        card.append($("<div></div>").addClass("card-body").append(form));
+        return card;
+    }
+
+    function createOutputCard(node_id, type) {
+        var title = "";
+        if (type["type"] === 0 || type["type"] === 1) {
+            title = "Analogue";
+        } else if (type["type"] === 3) {
+            title = "Digital";
+        } else if (type["type"] === 5) {
+            title = "Byte";
+        }
+        var card = createCard(type["params"].length + " x " + title + " Output");
+        var form = $("<form></form>")
+            .attr("data-node", node_id)
+            .attr("data-type", type["type"]);
+        type["params"].forEach(function (value) {
+            var input = $("<input />")
+                .attr("readonly", "readonly")
+                .attr("type", "number")
+                .attr("data-index", value["id"])
+                .attr("placeholder", value["type"])
+                .addClass("form-control");
+
+            var row = $("<div></div>")
+                .addClass("form-group row")
+                .append($("<label></label>")
+                    .addClass("col-form-label col-sm-4")
+                    .text(value["type"]))
+                .append($("<div></div>")
+                    .addClass("col-sm-8").append(input)
+                );
+            form.append(row);
+        });
+        card.append($("<div></div>").addClass("card-body").append(form));
+        loadOutputData(card);
+        form.append(
+            $("<div></div>")
+                .addClass("col-6 offset-3")
+                .append(
+                    $("<button></button>")
+                        .attr("type", "button")
+                        .addClass("btn btn-primary btn-block")
+                        .append('Reload Values&nbsp;&nbsp;&nbsp;<span class="small oi oi-refresh"></span>')
+                        .click(function () {
+                            loadOutputData(card)
+                        })
+                )
+        );
+        return card;
+    }
+
+    function loadOutputData(card) {
+        var form = $(card).find("form");
+        var node_id = parseInt(form.attr("data-node"));
+        var type = parseInt(form.attr("data-type"));
+        makeRequest("node/" + node_id + "/" + type, function (data) {
+            data.forEach(function (values) {
+                var input = form.find('input[data-index="' + values["index"] + '"]')[0];
+                $(input).val(values["value"]);
+            });
+            displayAlert("success", "Successfully updated data from node!");
+        });
+    }
+
+    function createCard(title) {
+        var header = $("<h5></h5>")
+            .addClass("card-header")
+            .text(title);
+        return $("<div></div>")
+            .addClass("card")
+            .append(header);
+    }
+</script>
+</body>
+</html>
