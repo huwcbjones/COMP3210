@@ -211,14 +211,14 @@
         } else if (type["type"] === 4) {
             title = "Byte";
         }
-        var card = createCard(type["params"].length + " x " + getIOTitle(type["type"]) + " Input");
+        var card = createCard(type["params"].length + " x " + getIOTitle(type["type"]) + " Input", node_id + "-" + type["type"]);
         var form = $("<form></form>")
             .attr("data-node", node_id)
             .attr("data-type", type["type"]);
 
         type["params"].forEach(function (value) {
             var input = undefined;
-            if (type["type"] !== 6) {
+            if (type["type"] !== 4) {
                 input = $("<input />")
                     .attr("type", "number")
                     .attr("data-index", value["id"])
@@ -262,7 +262,7 @@
                         .click(function () {
                             var form = $($(this).parents("form")[0]);
                             var data = [];
-                            if (form.attr("data-type") != 6) {
+                            if (form.attr("data-type") != 4) {
                                 form.find("input").each(function (_, e) {
                                     var el = $(e);
                                     var index = parseInt(el.attr("data-index"));
@@ -306,138 +306,97 @@
                         })
                 )
         );
-        card.append($("<div></div>").addClass("card-body").append(form));
+        card.append($("<div></div>").addClass("card-body collapse").attr("id", node_id + "-" + type["type"]).append(form));
         return card;
     }
 
     function toggleButton(id, state) {
-        $("#btn-" + id + "-1")
-            .addClass((state ? "btn-success" : "btn-secondary"))
-            .removeClass((state ? "btn-secondary" : "btn-success"));
-        $("#btn-" + id + "-" + (state ? 1 : 0))
-            .addClass("active");
-        $("#btn-" + id + "-" + (!state ? 1 : 0))
-            .removeClass("active");
-        $("#in-" + id + "-" + (state ? 1 : 0))
-            .attr("checked", "checked");
-        $("#in-" + id + "-" + (!state ? 1 : 0))
-            .removeAttr("checked");
-        $("#btn-" + id + "-0")
-            .addClass((!state ? "btn-danger" : "btn-secondary"))
-            .removeClass((!state ? "btn-secondary" : "btn-danger"));
-        if (id.slice(-3) !== "all") {
-            var allBtn = "#btn-" + id.slice(0, id.length - 1) + "all-";
-            $(allBtn + "0")
-                .removeClass()
-                .addClass("btn btn-secondary");
-            $(allBtn + "1")
-                .removeClass()
-                .addClass("btn btn-secondary");
+        var state_el = state;
+        state = $(state).prop("checked");
+        $(id)
+            .addClass((state ? "btn-success" : "btn-danger"))
+            .removeClass((state ? "btn-danger" : "btn-success") + " btn-secondary");
+        if (state_el.slice(-3) === "all") {
+            $(id).find("input").each(function (_, e) {
+                $(e).prop("checked", state);
+            });
+        } else {
+            console.log("#" + id.substring(4, id.length - 1) + "all");
+            $(id.substring(0, id.length - 1) + "all")
+                .removeClass("btn-success btn-danger")
+                .addClass("btn-secondary");
+            $("in" + id.substring(4, id.length - 1) + "all")
+                .inderminate = true;
         }
     }
 
-    function createDigitalInputs(node_id, type) {
-        var container = $("<div></div>").addClass("col-sm-8");
+    function createDigitalInputs(node_id, type, readonly) {
+        if (readonly === undefined) {
+            readonly = false;
+        }
+        var container = $("<div></div>").addClass("btn-group btn-group-toggle");
         for (var index = 0; index < 9; index++) {
-            var ID;
+            var ID = node_id + "-" + type;
+            var btnID;
             var allBtn = false;
             var i = index;
             if (index === 0) {
+                if (readonly) {
+                    continue;
+                }
                 allBtn = true;
-                ID = node_id + "-" + type + "-all";
+                btnID = node_id + "-" + type + "-all";
             } else {
                 i--;
-                ID = node_id + "-" + type + "-" + i;
+                btnID = node_id + "-" + type + "-" + i;
 
             }
-            var onID = ID + "-1";
-            var offID = ID + "-0";
-            var onBtn = $("<label></label>")
-                .addClass("btn btn-secondary")
-                .attr("id", "btn-" + onID)
-                .text("On")
-                .append(
-                    $("<input />")
-                        .attr("type", "radio")
-                        .attr("name", "in-" + ID)
-                        .attr("id", "in-" + onID)
-                        .attr("data-index", i)
-                        .attr("value", 1)
-                );
-            if (allBtn) {
-                (function (btn, ID) {
-                    btn.click(function () {
-                        for (var j = 0; j < 8; j++) {
-                            toggleButton(ID.slice(0, -3) + j, true);
-                        }
-                        toggleButton(ID, true);
-                    });
-                })(onBtn, ID);
+            var input = $("<input />")
+                .attr("type", "checkbox")
+                .attr("name", "in-" + btnID)
+                .attr("id", "in-" + btnID)
+                .attr("data-index", i)
+                .attr("value", 1);
+
+            var btn = $("<label></label>")
+                .addClass("btn btn-danger digital-" + ID)
+                .attr("id", "btn-" + btnID)
+                .text(allBtn ? "All" : i)
+                .append(input);
+
+            if (readonly) {
+                input.attr("readonly", "readonly");
+                btn
+                    .removeClass("btn-danger")
+                    .addClass("btn-secondary")
+                    .addClass("disabled");
             } else {
-                (function (btn, ID) {
-                    btn.click(function () {
-                        toggleButton(ID, true);
-                    });
-                })(onBtn, ID);
-            }
-            var offBtn = $("<label></label>")
-                .addClass("btn btn-danger active")
-                .attr("id", "btn-" + offID)
-                .text("Off")
-                .append(
-                    $("<input />")
-                        .attr("type", "radio")
-                        .attr("name", "in-" + ID)
-                        .attr("id", "in-" + offID)
-                        .attr("data-index", i)
-                        .attr("checked", "checked")
-                        .attr("value", 0)
-                );
-            if (allBtn) {
-                (function (btn, ID) {
-                    btn.click(function () {
-                        for (var j = 0; j < 8; j++) {
-                            toggleButton(ID.slice(0, -3) + j, false);
-                        }
-                        toggleButton(ID, false);
-                    });
-                })(offBtn, ID);
-            } else {
-                (function (btn, ID) {
-                    btn.click(function () {
-                        toggleButton(ID, false);
-                    });
-                })(offBtn, ID);
+                if (allBtn) {
+                    (function (btn, ID) {
+                        btn.click(function () {
+                            toggleButton(".digital-" + ID, "#in-" + ID + "-all");
+                        });
+                    })(btn, ID, btnID);
+                } else {
+                    (function (btn, ID) {
+                        btn.click(function () {
+                            toggleButton("#btn-" + ID, "#in-" + ID);
+                        });
+                    })(btn, btnID);
+                }
             }
 
-            var row = $("<div></div>")
-                .addClass("row")
-                .append(
-                    $("<label></label>")
-                        .addClass("col-form-label col-2")
-                        .text(allBtn ? "All" : i)
-                )
-                .append(
-                    $("<div></div>")
-                        .addClass("col-10")
-                        .append(
-                            $("<div></div>")
-                                .addClass("btn-group btn-group-toggle")
-                                .attr("data-toggle", "buttons")
-                                .append(offBtn)
-                                .append(onBtn)
-                        )
-                );
-            container.append(row);
+            container.append(btn);
         }
+
         return container;
     }
 
     function getIOTitle(type) {
         if (type === 0 || type === 2) {
-            return "Short";
+            return "Integer (1B)";
         } else if (type === 1 || type === 3) {
-            return "Integer";
+            return "Integer (2B)";
         } else if (type === 4 || type === 5) {
             return "Digital";
         } else if (type === 6 || type === 7) {
@@ -447,18 +406,21 @@
     }
 
     function createOutputCard(node_id, type) {
-        var card = createCard(type["params"].length + " x " + getIOTitle(type["type"]) + " Output");
+        var card = createCard(type["params"].length + " x " + getIOTitle(type["type"]) + " Output", node_id + "-" + type["type"]);
         var form = $("<form></form>")
             .attr("data-node", node_id)
             .attr("data-type", type["type"]);
         type["params"].forEach(function (value) {
-            var input = $("<input />")
-                .attr("readonly", "readonly")
-                .attr("type", "number")
-                .attr("data-index", value["id"])
-                .attr("placeholder", "Loading...")
-                .addClass("form-control");
-
+            if (type["type"] !== 5) {
+                var input = $("<input />")
+                    .attr("readonly", "readonly")
+                    .attr("type", "number")
+                    .attr("data-index", value["id"])
+                    .attr("placeholder", "Loading...")
+                    .addClass("form-control");
+            } else {
+                input = createDigitalInputs(node_id, value["id"], true);
+            }
             var row = $("<div></div>")
                 .addClass("form-group row")
                 .append($("<label></label>")
@@ -469,7 +431,7 @@
                 );
             form.append(row);
         });
-        card.append($("<div></div>").addClass("card-body").append(form));
+        card.append($("<div></div>").addClass("card-body collapse").attr("id", node_id + "-" + type["type"]).append(form));
         loadOutputData(card);
         form.append(
             $("<div></div>")
@@ -478,7 +440,7 @@
                     $("<button></button>")
                         .attr("type", "button")
                         .addClass("btn btn-primary btn-block")
-                        .append('Reload Values&nbsp;&nbsp;&nbsp;<span class="small oi oi-refresh"></span>')
+                        .append('Reload Values&nbsp;&nbsp;&nbsp;<span class="small oi oi-reload"></span>')
                         .click(function () {
                             loadOutputData(card)
                         })
@@ -493,19 +455,53 @@
         var type = parseInt(form.attr("data-type"));
         makeRequest("node/" + node_id + "/" + type, function (data) {
             data.forEach(function (values) {
-                var input = form.find('input[data-index="' + values["index"] + '"]')[0];
-                $(input).val(values["value"]);
+                if (type !== 5) {
+                    var input = form.find('input[data-index="' + values["index"] + '"]')[0];
+                    $(input).val(values["value"]);
+                } else {
+                    var vals = {};
+                    for (var i = 0; i < 8; i++) {
+                        vals[i] = (values["value"] & (1 << i)) >> i
+                    }
+                    form.find("label.digital-" + node_id + "-" + values["index"]).each(function () {
+                        var input = $($(this).find("input")[0]);
+                        var index = parseInt(input.attr("data-index"));
+                        $(this)
+                            .removeClass("btn-secondary btn-success btn-danger")
+                            .addClass(vals[index] ? "btn-success" : "btn-danger");
+                        if (vals[index]) {
+                            input.attr("checked", "checked");
+                        } else {
+                            input.removeAttr("checked");
+                        }
+                    });
+                }
             });
             displayAlert("success", "Successfully updated data from node!");
         });
     }
 
-    function createCard(title) {
+    function createCard(title, id) {
+        var collapseIcon = $("<span></span>")
+            .addClass("float-right oi oi-collapse-down");
         var header = $("<h5></h5>")
+            .attr("data-toggle", "collapse")
+            .attr("data-target", "#" + id)
             .addClass("card-header")
-            .text(title);
+            .append($("<a href='#'></a>").text(title))
+            .append(collapseIcon);
         return $("<div></div>")
             .addClass("card")
+            .on("show.bs.collapse", function () {
+                collapseIcon
+                    .addClass("oi-collapse-up")
+                    .removeClass("oi-collapse-down");
+            })
+            .on("hide.bs.collapse", function () {
+                collapseIcon
+                    .addClass("oi-collapse-down")
+                    .removeClass("oi-collapse-up");
+            })
             .append(header);
     }
 </script>
