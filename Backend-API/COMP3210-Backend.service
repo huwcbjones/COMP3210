@@ -4,9 +4,8 @@ After=network.target
 
 [Service]
 Type=notify
-User=comp3210
 WorkingDirectory=/opt/COMP3210/Backend-API
-ExecStart=/opt/COMP3210/Backend-API/run.sh
+ExecStart=/usr/bin/python3 /opt/COMP3210/Backend-API/main.py +r +b -x /dev/ttyUSB0 -v
 Restart=on-abort
 
 [Install]
