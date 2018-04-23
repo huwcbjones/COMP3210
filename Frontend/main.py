@@ -1,47 +1,46 @@
-import argparse
-import logging
-from api import API
+from tkinter import *
+import time
 
-logging.basicConfig(format="%(asctime)s[%(levelname)8s][%(threadName)s][%(module)s] %(message)s",
-                    datefmt="[%m/%d/%Y %H:%M:%S]")
-logger = logging.getLogger(__name__)
 
-parser = argparse.ArgumentParser(description="COMP3210 Backend API", prefix_chars="-+")
+class FullScreenApp(object):
+    def __init__(self, master, **kwargs):
+        self.master = master
+        self.master.config(menu=None)
+        pad = 3
+        self._geom = '200x200+0+0'
+        master.geometry("{0}x{1}+0+0".format(
+            master.winfo_screenwidth() - pad, master.winfo_screenheight() - pad))
 
-# Binary Protocol
-group = parser.add_argument_group(title="Binary Protocol")
-group.add_argument("--bin-addr", dest="bin_addr", help="Address to listen on (default: all)", default="",
-                   metavar="ADDRESS")
-group.add_argument("--bin-port", dest="bin_port", type=int, help="Port number to listen on", default=5190,
-                   metavar="PORT")
-bool_group = group.add_mutually_exclusive_group(required=True)
-bool_group.add_argument("-b", dest="enable_binary", help="Disable Binary Protocol", action="store_false")
-bool_group.add_argument("+b", dest="enable_binary", help="Enable Binary Protocol", action="store_true")
+    def toggle_geom(self, event):
+        geom = self.master.winfo_geometry()
+        print(geom, self._geom)
+        self.master.geometry(self._geom)
+        self._geom = geom
 
-# REST API
-group = parser.add_argument_group(title="REST API")
-group.add_argument("--rest-addr", dest="rest_addr", help="Address to listen on (default: all)", default="",
-                   metavar="ADDRESS")
-group.add_argument("--rest-port", dest="rest_port", type=int, help="Port number to listen on", default=8080,
-                   metavar="PORT")
-bool_group = group.add_mutually_exclusive_group(required=True)
-bool_group.add_argument("-r", dest="enable_rest", help="Disable REST API", action="store_false")
-bool_group.add_argument("+r", dest="enable_rest", help="Enable REST API", action="store_true")
 
-# Other
-parser.add_argument("-v", "--verbose", dest="verbosity", action="count", help="Increase verbosity.")
-args = parser.parse_args()
+root = Tk()
+time1 = ''
+clock = Label(root, font=('times', 20, 'bold'), bg='black', fg='white')
+clock.pack(fill=BOTH, expand=1)
 
-# Set root logging level
-if args.verbosity is not None:
-    logger = logging.getLogger()
-    if args.verbosity == 1:
-        logger.setLevel(logging.INFO)
-    else:
-        logger.setLevel(logging.DEBUG)
 
-api = API(
-    enable_binary=args.enable_binary, binary_address=args.bin_addr, binary_port=args.bin_port,
-    enable_rest=args.enable_rest, rest_address=args.rest_addr, rest_port=args.rest_port
-)
-api.run()
+def tick():
+    global time1
+    # get the current local time from the PC
+    time2 = time.strftime('%H:%M:%S')
+    # if time string has changed, update it
+    if time2 != time1:
+        time1 = time2
+        clock.config(text=time2)
+    # calls itself every 200 milliseconds
+    # to update the time display as needed
+    # could use >200 ms, but display gets jerky
+    clock.after(200, tick)
+
+
+tick()
+
+app = FullScreenApp(root)
+
+root.overrideredirect(1)
+root.mainloop()
