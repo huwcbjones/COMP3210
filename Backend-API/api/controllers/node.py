@@ -72,6 +72,8 @@ class NodeSendDataController(Controller):
 
         for d in data:
             try:
+                if payload == Node.Payload.BYTE_INPUT:
+                    d["data"] = d["data"].encode()
                 self.app.sensor_net.send_data(node, payload, d["data"], d["index"])
             except ValueError or TypeError as e:
                 raise HTTPError(status_code=400, reason=e.args[0])

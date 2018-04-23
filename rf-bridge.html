@@ -267,10 +267,10 @@
                                     var el = $(e);
                                     var index = parseInt(el.attr("data-index"));
                                     var val = el.val();
-                                    if (val == 0) {
-                                        val = 0;
-                                    } else {
-                                        val = parseInt(val);
+                                    if (form.attr("data-type") != 6) {
+                                        if (!isNaN(parseInt(val))) {
+                                            val = parseInt(val);
+                                        }
                                     }
                                     data.push({
                                         "index": index,
