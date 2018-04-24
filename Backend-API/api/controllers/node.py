@@ -12,13 +12,13 @@ class NodeIOController(Controller):
         except ValueError:
             raise HTTPError(status_code=404, reason="Node not found.")
 
-        if node_id not in self.app.sensor_net._slave_nodes:
+        if not self.app.sensor_net.node_exists(node_id):
             raise HTTPError(status_code=404, reason="Node not found.")
 
-        node = self.app.sensor_net._slave_nodes[node_id]
+        node = self.app.sensor_net.get_node_by_id(node_id)
         node_info = {"id": node.addr, "identifier": node.identifier, "types": []}
 
-        payloads = self.app.sensor_net.get_node_io(node)
+        payloads = self.app.sensor_net.get_node_io(node, timeout=5)
         for payload in payloads.keys():
             type = {}
             node_info["types"].append(type)
@@ -26,7 +26,7 @@ class NodeIOController(Controller):
             params = []
             type["params"] = params
             for i in range(0, payloads[payload]):
-                payload_info = self.app.sensor_net.get_payload_info(node, payload, index=i)
+                payload_info = self.app.sensor_net.get_payload_info(node, payload, index=i, timeout=5)
                 params.append({
                     "id": i,
                     "type": payload_info.decode()
@@ -74,7 +74,7 @@ class NodeSendDataController(Controller):
             try:
                 if payload == Node.Payload.BYTE_INPUT:
                     d["data"] = d["data"].encode()
-                self.app.sensor_net.send_data(node, payload, d["data"], d["index"])
+                self.app.sensor_net.send_data(node, payload, d["data"], d["index"], timeout=5)
             except ValueError or TypeError as e:
                 raise HTTPError(status_code=400, reason=e.args[0])
             except ProtocolError as e:
@@ -92,16 +92,16 @@ class NodeGetDataController(Controller):
         except ValueError:
             raise HTTPError(status_code=404, reason="Node not found.")
 
-        if node_id not in self.app.sensor_net._slave_nodes:
+        if not self.app.sensor_net.node_exists(node_id):
             raise HTTPError(status_code=404, reason="Node not found.")
 
-        node = self.app.sensor_net._slave_nodes[node_id]
+        node = self.app.sensor_net.get_node_by_id(node_id)
 
         payload = Node.Payload(int(payload))
         if index != "":
             try:
                 index = int(index[1:])
-                data = {"value": self.app.sensor_net.get_data(node, payload, index)}
+                data = {"value": self.app.sensor_net.get_data(node, payload, index, timeout=5)}
             except ValueError or TypeError as e:
                 raise HTTPError(status_code=400, reason=e.args[0])
             except ProtocolError as e:
@@ -110,7 +110,7 @@ class NodeGetDataController(Controller):
             data = []
             for i in range(0, 16):
                 try:
-                    result = self.app.sensor_net.get_data(node, payload, i)
+                    result = self.app.sensor_net.get_data(node, payload, i, timeout=5)
                     data.append({"index": i, "value": result})
                 except ProtocolError:
                     break
