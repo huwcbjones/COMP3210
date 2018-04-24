@@ -75,7 +75,7 @@ class NodeSendDataController(Controller):
                 if payload == Node.Payload.BYTE_INPUT:
                     d["data"] = d["data"].encode()
                 self.app.sensor_net.send_data(node, payload, d["data"], d["index"], timeout=5)
-            except ValueError or TypeError as e:
+            except (ValueError, TypeError) as e:
                 raise HTTPError(status_code=400, reason=e.args[0])
             except ProtocolError as e:
                 raise HTTPError(400, reason=e.args[0])
@@ -102,7 +102,7 @@ class NodeGetDataController(Controller):
             try:
                 index = int(index[1:])
                 data = {"value": self.app.sensor_net.get_data(node, payload, index, timeout=5)}
-            except ValueError or TypeError as e:
+            except (ValueError, TypeError) as e:
                 raise HTTPError(status_code=400, reason=e.args[0])
             except ProtocolError as e:
                 raise HTTPError(400, reason=e.args[0])
@@ -111,6 +111,8 @@ class NodeGetDataController(Controller):
             for i in range(0, 16):
                 try:
                     result = self.app.sensor_net.get_data(node, payload, i, timeout=5)
+                    if payload == Node.Payload.BYTE_OUTPUT:
+                        result = result.decode()
                     data.append({"index": i, "value": result})
                 except ProtocolError:
                     break
