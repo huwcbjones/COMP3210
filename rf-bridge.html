@@ -29,9 +29,17 @@
                 <li class="list-group-item"><h2>Nodes</h2></li>
             </ul>
             <br/>
-            <button type="button" class="btn btn-block btn-light" onclick="loadNodes(true)">
-                Refresh&nbsp;&nbsp;&nbsp;<span
-                    class="small oi oi-reload"></span></button>
+            <div class="row">
+                <div class="col">
+                    <button type="button" class="btn btn-block btn-outline-secondary" onclick="loadNodes()">
+                        Refresh&nbsp;&nbsp;&nbsp;<span class="small oi oi-reload"></span></button>
+                </div>
+                <div class="col">
+                    <button type="button" class="btn btn-block btn-secondary" onclick="loadNodes(true)">
+                        Force Refresh&nbsp;&nbsp;&nbsp;<span class="small oi oi-reload"></span></button>
+
+                </div>
+            </div>
         </div>
         <div class="col-sm-8">
             <div class="row" id="jumbotron">
@@ -89,14 +97,14 @@
             data.forEach(function (value) {
                 var node = createNodeLink(value["id"], value["name"]);
                 if (activeNode === value["id"]) {
-                    node.addClass("active");
+                    node.addClass("list-group-item-primary");
                 }
                 nodeList.append(node);
             });
             $(".node").click(function () {
                 var node = $(this);
                 activeNode = parseInt(node.attr("data-node-id"));
-                if (!node.hasClass("active")) {
+                if (!node.hasClass("list-group-item-primary")) {
                     displayNodeData(node, node.attr("data-node-id"));
                 }
             });
@@ -176,8 +184,8 @@
     function displayNodeData(node, node_id) {
         $("#jumbotron").fadeOut();
         makeRequest("node/" + node_id + "/io", function (data) {
-            $(".node").removeClass("active");
-            node.addClass("active");
+            $(".node").removeClass("list-group-item-primary");
+            node.addClass("list-group-item-primary");
             $("#node_name").text(data["identifier"]);
             var cards = $("#cards");
             cards.empty();
@@ -214,7 +222,10 @@
         var card = createCard(type["params"].length + " x " + getIOTitle(type["type"]) + " Input", node_id + "-" + type["type"]);
         var form = $("<form></form>")
             .attr("data-node", node_id)
-            .attr("data-type", type["type"]);
+            .attr("data-type", type["type"])
+            .on("submit", function (e) {
+                e.preventDefault();
+            });
 
         type["params"].forEach(function (value) {
             var input = undefined;
@@ -256,7 +267,7 @@
                 .addClass("col-6 offset-3")
                 .append(
                     $("<button></button>")
-                        .attr("type", "button")
+                        .attr("type", "submit")
                         .addClass("btn btn-primary btn-block")
                         .append('Send Values&nbsp;&nbsp;&nbsp;<span class="small oi oi-share"></span>')
                         .click(function () {
@@ -268,7 +279,9 @@
                                     var index = parseInt(el.attr("data-index"));
                                     var val = el.val();
                                     if (form.attr("data-type") != 6) {
-                                        if (!isNaN(parseInt(val))) {
+                                        if (val == 0) {
+                                            val = 0;
+                                        } else if (!isNaN(parseInt(val))) {
                                             val = parseInt(val);
                                         }
                                     }
@@ -290,7 +303,6 @@
                                         "data": value
                                     })
                                 });
-                                console.log(data);
                             }
                             makeRequest("" +
                                 "node/" + form.attr("data-node"),
@@ -414,7 +426,7 @@
             if (type["type"] !== 5) {
                 var input = $("<input />")
                     .attr("readonly", "readonly")
-                    .attr("type", "number")
+                    .attr("type", "text")
                     .attr("data-index", value["id"])
                     .attr("placeholder", "Loading...")
                     .addClass("form-control");
@@ -457,7 +469,8 @@
             data.forEach(function (values) {
                 if (type !== 5) {
                     var input = form.find('input[data-index="' + values["index"] + '"]')[0];
-                    $(input).val(values["value"]);
+                    $(input).val(values["value"])
+                        .removeAttr("placeholder");
                 } else {
                     var vals = {};
                     for (var i = 0; i < 8; i++) {
